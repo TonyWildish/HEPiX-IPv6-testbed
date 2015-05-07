@@ -1,0 +1,343 @@
+plotDurationDistribution <- function(from=NULL, to=NULL) {
+  link = transfers$From == from & transfers$To == to
+  if ( !length(transfers$Duration[link]) ) { return() }
+  xlim = range(transfers$Duration[link])
+  xlim = c( as.integer(xlim[1]/100),
+            100*as.integer((xlim[2]+100-1)/100) )
+  breaks <- seq(from=xlim[1], to=xlim[2], length.out=50)
+
+  cat('Plot duration distribution from',from,'to',to,"\n")
+
+  h <- NULL
+  tryCatch(
+  h <- hist(transfers$Duration[link & OK],
+       breaks = breaks,
+       plot = FALSE
+      )
+  , error = function(e) {
+     print(paste0('Whoops! ',e$message))
+     print(xlim[1])
+     print(xlim[2])
+     print(breaks)
+     print(h)
+    })
+  if ( is.null(h) ) { return(NULL) }
+  ylim = range(h$counts)
+  ylim[2] <- ylim[2] * 1.3
+  suppressWarnings(
+    hist(transfers$Duration[link & OK],
+         xlab='Duration (seconds)',
+         ylab='Frequency',
+         main=paste('Transfer duration distribution,',from,'to',to),
+         xlim = xlim,
+         ylim = ylim,
+         breaks = breaks,
+         col='blue',
+        )
+  )
+
+  n = length(transfers$Duration[link &  OK])
+  m =   mean(transfers$Duration[link &  OK])
+  s =     sd(transfers$Duration[link &  OK])
+  e = length(transfers$Duration[link & !OK])
+  smry <- data.frame('From'=from,'To'=to,N=n,Mean=m,StdDev=s,Errors=e,
+                     stringsAsFactors=FALSE)
+  n = format(n, digits=3)
+  m = format(m, digits=3)
+  s = format(s, digits=3)
+  l = paste0('N=',n,' Mean=',m,' Std.Dev.=',s)
+  legend("topright", inset=.05, title=NULL, c(l) )
+
+  suppressWarnings(
+  hist(transfers$Duration[link & !OK],
+       xlab='Duration (seconds)',
+       ylab='Frequency',
+       xlim = xlim,
+       breaks = breaks,
+       col=rgb(1,0,0,0.5),
+       add = TRUE
+      )
+  )
+  return(smry)
+}
+
+plotDurationDistributionSmall <- function(from=NULL, to=NULL) {
+  link = transfers$From == from & transfers$To == to
+  xMax = 500
+  xlim = range(0,xMax)
+  xCut = transfers$Duration < xMax
+  if ( !length(transfers$Duration[link & OK & xCut]) ) {
+    plot(c(0,1), main='', xlab='', ylab='', xaxt='n', yaxt='n', type='n')
+    return()
+  }
+  cat('Plot duration distribution from',from,'to',to,"\n")
+
+  suppressWarnings(
+    hist(transfers$Duration[link & OK & xCut],
+         main='',
+         xlab='', ylab='',
+         xlim = xlim,
+         yaxt='n',
+         col='blue',
+         freq=FALSE,
+        )
+  )
+  n = format(length(transfers$Duration[link & OK]), digits=3)
+  m = format(  mean(transfers$Duration[link & OK]), digits=3)
+  s = format(    sd(transfers$Duration[link & OK]), digits=3)
+  l = c(paste0('N=',n),paste0('M=',m))
+  legend("topright", inset=c(.1,-0.05), title=NULL, l, bty='n' )
+}
+
+plotDurationProfileLink <- function(from=NULL, to=NULL, link=NULL, main=NULL) {
+  par(mgp=c(3,0.6,0))
+  ylim = range(transfers$Duration[link])
+  ylim[1] = 0
+  if ( ylim[2] == -Inf ) { ylim[2] = 1 }
+  xlim = range(transfers$Start,transfers$Stop)
+  plot(
+        transfers$Stop[link],
+        transfers$Duration[link],
+        type='n',
+        xlab='',
+        ylab='Transfer duration',
+        xaxt='n',
+        ylim=ylim,
+        xlim=xlim,
+        main=main,
+      )
+
+# Calculate x-axis markers. Start at 12 hours, but thin out until I have less than
+# 5 labels to print. More than that clutters up the plot too much
+  interval = 3600 * 12
+  xlower = as.integer(xlim[1]/interval + 1)
+  xupper = as.integer(xlim[2]/interval - 1)
+  nBins  = xupper-xlower
+  while ( nBins > 5 ) {
+    interval = interval * 2
+    xlower = as.integer(xlim[1]/interval + 1)
+    xupper = as.integer(xlim[2]/interval)
+    nBins  = xupper-xlower
+  }
+  xupper = (xlower + nBins) * interval
+  xlower = xlower * interval
+  at <- seq(from=xlower, to=xupper, length.out=nBins+1)
+  labels <- lapply(
+    at,
+    as.POSIXct,
+    origin="1970-01-01"
+  )
+  if ( interval < 86400 ) {
+    labels <- lapply(labels, format, format="%m/%d %H")
+  } else {
+    labels <- lapply(labels, format, format="%m/%d")
+  }
+  axis(side=1,at=at,labels=labels,las=1,cex.axis=1.2);
+
+  points(transfers$Stop[link & OK],transfers$Duration[link & OK],type='p',
+         pch=19,
+         cex=0.3,
+         col='blue'
+         )
+  points(transfers$Stop[link & !OK],transfers$Duration[link & !OK],type='p',
+         pch=20,
+         cex=0.3,
+         col='red'
+         )
+}
+
+plotTransferProfileSetFrom <- function(from=NULL) {
+  cat('Plot transfer profile distribution set from',from,"\n")
+
+  n = length(Cols) - 1
+  par(cex.axis=0.75, las=2, mfrow=c(n,1))
+  par(mar=c(2,5,1,1))
+  for ( to in Cols ) {
+    link = transfers$From == from & transfers$To == to
+    if ( !length(transfers$Duration[link]) ) { next }
+    if ( from == to ) {
+      next;
+    }
+    plotDurationProfileLink(from=from,to=to,link=link,main=paste('From',from,'to',to))
+  }
+}
+
+plotTransferProfileSetTo <- function(to=NULL) {
+  cat('Plot transfer profile distribution set to',to,"\n")
+
+  n = length(Rows) - 1
+  par(cex.axis=0.75, las=2, mfrow=c(n,1))
+  par(mar=c(2,5,1,1))
+  for ( from in Rows ) {
+    link = transfers$From == from & transfers$To == to
+    if ( !length(transfers$Duration[link]) ) { next }
+
+    plotDurationProfileLink(from=from,to=to,link=link,main=paste('From',from,'to',to))
+  }
+}
+
+plotTransferProfile <- function(from=NULL, to=NULL) {
+  cat('Plot transfer profile distribution from',from,'to',to,"\n")
+  link = transfers$From == from & transfers$To == to
+  if ( !length(transfers$Duration[link]) ) { return() }
+
+# ylim = range(transfers$Duration)
+# ylim[1] = 0
+# if ( ylim[2] == -Inf ) { ylim[2] = 1 }
+
+  par(cex.axis=0.75, las=2, mar=c(5,4,4,2))
+  plotDurationProfileLink(from=from,to=to,link=link,main=paste('Time profile of transfers from',from,'to',to))
+  good = length(transfers$Duration[link &  OK])
+  bad  = length(transfers$Duration[link & !OK])
+
+  if ( bad > 0 ) {
+    errorRate = paste0('error rate: ',round(100*bad/(bad+good),digits=1),'%')
+  } else {
+    errorRate = 'no errors'
+  }
+  if ( !is.null(errorRate) ) {
+    legend("topright", inset=.0, title=NULL, legend=c(errorRate))
+  }
+}
+
+plotCombinedWireActivity <- function(node=NULL, dir=NULL) {
+  if ( is.null(dir) || is.null(node) ) { return() }
+  if ( dir != 'from' && dir != 'to' ) { return() }
+  if ( dir == 'from' ) {
+    link = transfers$From == node
+    dir  = 'From'
+    rDir = 'To'
+  }
+  if ( dir == 'to'   ) {
+    link = transfers$To == node
+    dir  = 'To'
+    rDir = 'From'
+  }
+  if ( length(transfers$Start[link]) == 0 ) { return() }
+
+  colours <- data.frame(
+               node = c('CERN','Caltech','INFN','GARR','GRIDKA','FZU','Imperial','PIC'),
+               colour = c('blue','green','grey','orange','wheat','turquoise','magenta','brown'),
+               stringsAsFactors = FALSE
+             )
+
+  xrange = range(transfers$Start[link], transfers$Stop[link])
+  yrange = range(0, transfers$Duration[link])
+  plot(
+        xrange,
+        yrange,
+        type='n',
+        xlab='',
+        ylab='Combined Activity',
+        xaxt='n',
+        main=paste('All nodes',dir,node),
+      )
+  d <- transfers[link,]
+  for (i in 1:length(d$Start)) {
+    row = d[i,]
+    n = row[rDir]
+    if ( row$Status == 0 ) {
+      if ( n == 'CERN'    ) { colour = 'blue' }
+      if ( n == 'Caltech' ) { colour = 'green' }
+      if ( n == 'INFN'    ) { colour = 'grey' }
+      if ( n == 'GARR'    ) { colour = 'orange' }
+      if ( n == 'GRIDKA'  ) { colour = 'wheat' }
+      if ( n == 'FZU'     ) { colour = 'turquoise' }
+    }
+    else                    { colour = 'red' }
+    x = c(row$Start,row$Stop)
+    y = c(row$Duration,row$Duration)
+    lines(x,y,col=colour,lwd=2)
+  }
+
+  nLabels = 5
+  at <- seq( from=xrange[1], to=xrange[2], length.out=nLabels )
+  labels <- lapply(
+    at,
+    as.POSIXct,
+    origin="1970-01-01"
+  )
+  labels <- lapply(labels, format, format="%m/%d %H:%M")
+  axis(1, labels=labels, at=at)
+  if ( dir == 'From' ) {
+    legend(x='topright',
+           legend = colours$node[colours$node != node],
+           col = colours$colour[ colours$node != node],
+           pch = rep( 19,length(colours$node)-1),
+           cex = rep(0.6,length(colours$node)-1)
+          )
+  }
+}
+
+# First, the duration distribution and transfer profiles
+if ( FALSE ) {
+  suppressWarnings(par(.parDefault))
+  devAskNewPage(ask=TRUE)
+  errSmry <- NULL
+  for (f in Rows) {
+    for (t in Cols) {
+      if ( f != t ) {
+        cat('Duration plots: from',f,'to',t,"\n")
+        par(mfrow = c(2,1))
+        smry = plotDurationDistribution(from=f, to=t)
+        if ( !is.null(smry) ) {
+          errSmry <- rbind(errSmry,smry)
+          plotTransferProfile(from=f, to=t)
+        }
+        savePlot(filename=paste0('R-',f,'-to-',t,'.bmp'))
+      }
+    }
+  }
+  write.csv(errSmry,'error-summary.csv')
+}
+
+if ( FALSE ) {
+  suppressWarnings(par(.parDefault))
+  devAskNewPage(ask=TRUE)
+  for (f in Rows) {
+    plotTransferProfileSetFrom(from=f)
+    savePlot(filename=paste0('R-set-',f,'-to-all.bmp'))
+    plotTransferProfileSetTo(    to=f)
+    savePlot(filename=paste0('R-set-all-to-',f,'.bmp'))
+  }
+}
+
+if ( FALSE ) {
+  suppressWarnings(par(.parDefault))
+  # Now the combined wire activity per site
+  print('Now for the combined wire activity per site')
+  for (n in Rows) {
+    saveIt = FALSE
+    cat('Combined activity: from',n,"\n")
+    plotCombinedWireActivity(node=n, dir='from')
+    cat('Combined activity: to',n,"\n")
+    plotCombinedWireActivity(node=n, dir='to')
+    savePlot(filename=paste0('R-combined-',n,'.bmp'))
+  }
+}
+
+if ( TRUE ) {
+  suppressWarnings(par(.parDefault))
+  devAskNewPage(ask=TRUE)
+  par(oma=c(0,3,3,0), mar=c(3,1,1,1))
+  par(mfrow=c(length(Rows),length(Cols)))
+  print('Now the NxN duration distributions, for comparison')
+  for ( f in Rows ) {
+    for ( t in Cols ) {
+      if ( f != t ) {
+        cat('Duration plots: from',f,'to',t,"\n")
+        plotDurationDistributionSmall(from=f, to=t)
+      } else {
+        plot(c(),
+             main='', xlab='', ylab='',
+             xlim=range(-1:1), ylim=range(-1:1),
+             xaxt='n', yaxt='n'
+             )
+        text(0, y=0, labels=f, cex=1.8 )
+      }
+    }
+  }
+  mtext('To',   side=3, outer=TRUE, cex=1.5)
+  mtext('From', side=2, outer=TRUE, cex=1.5)
+  savePlot(filename='R-combined-all.bmp')
+}
