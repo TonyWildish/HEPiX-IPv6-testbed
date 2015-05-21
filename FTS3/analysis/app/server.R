@@ -76,6 +76,13 @@ shinyServer(function(input, output) {
     Nodes <- levels( factor( data$From ) )
 
     par(oma=c(0,3,3,0), mar=c(2,0,0,1))
+    validate(
+      need(
+        length(Nodes) > 0,
+        paste0("No data in selected range (",input$interval,"), try a wider time-bin!" )
+      )
+    )
+
     par(mfrow=c(length(Nodes),length(Nodes)))
     for ( f in Nodes ) {
       showAxis = FALSE
