@@ -15,4 +15,6 @@ The logfiles from the full three years of running are archived on AFS at CERN in
 ## Using the testbed
 first, source the env.sh script in this directory. This will put the perl libraries and the **Lifecycle.pl** script in your **PERL5LIB** and **PATH**, respectively.
 
+First, you can check your installation is sane by running some of the examples in the **examples** directory.
+
 Next, go to the appropriate subdirectory (HEPiX/gridFTP, HEPiX/FTS3, or EBI/gridFTP) and follow the instructions in the README there.
