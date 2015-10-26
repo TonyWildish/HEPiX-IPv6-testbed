@@ -8,7 +8,7 @@ use POE;
 use POE::Queue::Array;
 use POE::Component::Child;
 use Lifecycle::Core::Command;
-# use Lifecycle::Core::Timing;
+use Lifecycle::Core::Timing;
 use Data::Dumper;
 
 # Contains job hashes which are returned back to the caller who
