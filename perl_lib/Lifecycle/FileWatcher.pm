@@ -20,8 +20,7 @@ sub Verbose { Lifecycle::Util::Verbose( (shift)->{Verbose}, @_ ); }
 sub Debug   { Lifecycle::Util::Debug  ( (shift)->{Debug},   @_ ); }
 sub Quiet   { Lifecycle::Util::Quiet  ( (shift)->{Quiet},   @_ ); }
 
-sub _init
-{
+sub _init {
   my $self = shift;
 
   $self->{Name} = "$self";
@@ -43,14 +42,14 @@ sub _init
   (
     inline_states       => {
       _start            => \&start,
-	},
-    object_states	=> [
-	$self => [
-			AddFile		=> 'AddFile',
-			CheckFile	=> 'CheckFile',
-			Quit		=> 'Quit',
-		 ],
-	],
+  },
+    object_states => [
+      $self => [
+           AddFile    => 'AddFile',
+           CheckFile  => 'CheckFile',
+           Quit   => 'Quit',
+         ],
+      ],
     args => $self,
   );
   return $self;
@@ -97,15 +96,14 @@ sub AUTOLOAD {
   return $self->{$attr};
 }
 
-sub AddClient
-{
+sub AddClient {
   my $self = shift;
   my $h = @_ ? { @_ } : $self;
   if ( $h->{Client} )
   {
     $self->Verbose(": Adding client=",$h->{Client},
-			 " event=",$h->{Event},
-			 " file=",$self->{File},"\n");
+       " event=",$h->{Event},
+       " file=",$self->{File},"\n");
     $self->{clients}->{$h->{Client}} = $h->{Event};
   }
   elsif ( $h->{Function} )
@@ -127,8 +125,7 @@ sub AddClient
   }
 }
 
-sub RemoveClient
-{
+sub RemoveClient {
   my ( $self, $p ) = @_;
   $self->Verbose("Removing client $p for ",$self->{File},"\n");
   if ( defined $self->{clients}->{$p} )
@@ -143,44 +140,7 @@ sub RemoveClient
   $poe_kernel->post( $self->{Session} => 'Quit' ) unless scalar(keys %{$self->{clients}});
 }
 
-# Remove the object pass as argument from the objects watched 
-# and kill the session if there are no more objects.
-sub RemoveObject 
-{
-  my ( $self, $p ) = @_;
-  my ( $object_stored );
-  my ( $index ) = 0;
-  my ( $found ) = -1; #-1 not found, other index found
-
-  $self->Verbose("Removing object $p for ",$self->{File},"\n");
-
-  # Look for the object and store in found the index where it was found
-  foreach $object_stored (@{$self->{objects}}){
-
-      if( $object_stored == $p ){
-	  $found = $index;
-      }
-      $index++;
-  }
-
-  if ( $found != -1 )
-  {
-      $self->Verbose("Object found: Index ", $found ,".\n");
-
-      # Remove it from ours objects
-      delete $self->{objects}[$found];
-  }
-  else
-  {
-      Print "Object not among my objects.\n";
-  }
-
-  # If there are no more objects to watch kill the session
-  $poe_kernel->post( $self->{Session} => 'Quit' ) unless scalar(@{$self->{objects}});
-}
-
-sub AddFile
-{
+sub AddFile {
   my ( $self, $kernel, $session ) = @_[ OBJECT, KERNEL, SESSION ];
   if ( ! defined($self->{mtime}) )
   {
@@ -190,8 +150,7 @@ sub AddFile
   $kernel->delay( 'CheckFile', $self->{Interval} );
 }
 
-sub CheckFile
-{
+sub CheckFile {
   my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
   $self->Debug("Checking file: ",$self->{File},' ',$self->{mtime},"\n");
   my $mtime = (stat($self->{File}))[9] or 0;
@@ -201,7 +160,7 @@ sub CheckFile
     foreach ( keys %{$self->{clients}} )
     {
       $self->Verbose($self->{File}," changed: call $_",
-					'->{', $self->{clients}->{$_}, "}\n");
+          '->{', $self->{clients}->{$_}, "}\n");
       $kernel->post( $_, $self->{clients}->{$_}, $self->{File} );
     }
     foreach ( @{$self->{functions}} )
@@ -216,21 +175,12 @@ sub CheckFile
   $kernel->delay( 'CheckFile', $self->{Interval} );
 }
 
-sub Quit
-{
+sub Quit {
   my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
   $self->Debug($self->{Name},": Quitting...\n");
   $kernel->delay( 'CheckFile' );
   undef $self->{Interval};
   $kernel->yield( '_stop' );
-}
-
-sub Object
-{
-  my ($self,$object) = @_;
-  $object->ReadConfig($self->{File});
-  $self->Interval($object->ConfigRefresh);
-  $self->File    ($object->Config);
 }
 
 1;
