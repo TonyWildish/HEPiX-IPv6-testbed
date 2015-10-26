@@ -10,7 +10,12 @@ This directory contains a few example config files to show what the Lifecycle ag
 - example-make-statistics.conf
 - example-ping-pong.conf
 
-The others, listed below, are specific to environments that need proxy certificates
+You can run any of these as follows:
+> Lifecycle.pl --config example-XYZ.conf
+
+To stop execution, hit CTRL-C
+
+The others, listed below, are specific to environments that need proxy certificates. Don't bother with them unless you know what you're doing.
 - example-Auth-proxy.conf
 - example-Auth-self-signed-cert.conf
 - example-Auth.conf
