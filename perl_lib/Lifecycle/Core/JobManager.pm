@@ -8,7 +8,7 @@ use POE;
 use POE::Queue::Array;
 use POE::Component::Child;
 use Lifecycle::Core::Command;
-use Lifecycle::Core::Timing;
+# use Lifecycle::Core::Timing;
 use Data::Dumper;
 
 # Contains job hashes which are returned back to the caller who
@@ -16,61 +16,61 @@ use Data::Dumper;
 # supposed to be unique, so there should be no collision with multiple
 # job managers.
 our %PAYLOADS = ();
-		 
+     
 sub new
 {
-    my $proto = shift;
-    my $class = ref($proto) || $proto;
-    my %args = (@_);
-    my $self = $class->SUPER::new(@_);
-    my %params = ( NJOBS      => 1,  # number of parallel jobs, 0 for infinite
-		   KEEPALIVE  => 60, # whether or not to quit after all jobs are complete
-		   JOB_COUNT  => 0,  # Bookkeeping, track the number of jobs I have submitted
-		   VERBOSE    => 0,
-		   DEBUG      => 0,
-		   POCO_DEBUG => $ENV{POCO_DEBUG} || 0   # special debugging flag
-		   );
-    $$self{$_} = exists $args{$_} ? $args{$_} : $params{$_} for keys %params;
+  my $proto = shift;
+  my $class = ref($proto) || $proto;
+  my %args = (@_);
+  my $self = $class->SUPER::new(@_);
+  my %params = ( NJOBS      => 1,  # number of parallel jobs, 0 for infinite
+                 KEEPALIVE  => 60, # whether or not to quit after all jobs are complete
+                 JOB_COUNT  => 0,  # Bookkeeping, track the number of jobs I have submitted
+                 VERBOSE    => 0,
+                 DEBUG      => 0,
+                 POCO_DEBUG => $ENV{POCO_DEBUG} || 0   # special debugging flag
+               );
+  $$self{$_} = exists $args{$_} ? $args{$_} : $params{$_} for keys %params;
 
-    $self->{JOB_QUEUE} = POE::Queue::Array->new();
-    $self->{JOBS_RUNNING} = {};
+  $self->{JOB_QUEUE} = POE::Queue::Array->new();
+  $self->{JOBS_RUNNING} = {};
 
-    bless $self, $class;
+  bless $self, $class;
 
 #   Start a POE session for myself
-    POE::Session->create
-      (
-        object_states =>
-        [
-          $self =>
-          {
-	    job_queued		=> 'job_queued',
-	    timeout		=> 'timeout',
-	    queue_drained	=> 'queue_drained',
-	    maybe_clear_alarms	=> 'maybe_clear_alarms',
-	    heartbeat		=> 'heartbeat',
+  POE::Session->create
+    (
+      object_states =>
+      [
+        $self =>
+        {
+          job_queued          => 'job_queued',
+          timeout             => 'timeout',
+          queue_drained       => 'queue_drained',
+          maybe_clear_alarms  => 'maybe_clear_alarms',
+          heartbeat           => 'heartbeat',
 
-            _start	=> '_jm_start',
-            _stop	=> '_jm_stop',
-	    _child	=> '_jm_child',
-            _default	=> '_jm_default',
-          },
-        ],
-      );
+          _start    => '_jm_start',
+          _stop     => '_jm_stop',
+          _child    => '_jm_child',
+          _default  => '_jm_default',
+        },
+      ],
+    );
 
-    $self->{_child} = 
-      POE::Component::Child->new(
-           events => {
-	       stdout => \&_child_stdout,
-	       stderr => \&_child_stderr,
-	       error  => \&_child_error,
-	       done   => \&_child_done,
-	       died   => \&_child_died,
-	   },
-           debug  => $self->{POCO_DEBUG},
-          );
+  $self->{_child} = 
+    POE::Component::Child->new(
+       events => {
+       stdout => \&_child_stdout,
+       stderr => \&_child_stderr,
+       error  => \&_child_error,
+       done   => \&_child_done,
+       died   => \&_child_died,
+    },
+    debug  => $self->{POCO_DEBUG},
+  );
 
-    return $self;
+  return $self;
 }
 
 sub _jm_start
@@ -160,14 +160,14 @@ sub job_queued
 
   # Whether or not we keep the output in memory
   if ( exists $job->{KEEP_OUTPUT} && $job->{KEEP_OUTPUT} ) {
-      $job->{_keep_output} = 1;
-      $job->{STDOUT} = "";
-      $job->{STDERR} = "";
+    $job->{_keep_output} = 1;
+    $job->{STDOUT} = "";
+    $job->{STDERR} = "";
   }
 
   # Whether or not we prefix the output
   if (exists $job->{LOGPREFIX} && $job->{LOGPREFIX}) {
-      $job->{_logprefix} = 1;
+    $job->{_logprefix} = 1;
   }
 
   # Add start line to log
@@ -178,7 +178,7 @@ sub job_queued
       my $logfh = \*{$job->{_logfh}};
       my $oldfh = select($logfh); local $| = 1; select($oldfh);
       print $logfh
-	(strftime ("%Y-%m-%d %H:%M:%S", gmtime),
+        (strftime ("%Y-%m-%d %H:%M:%S", gmtime),
          " $job->{_cmdname}($job->{PID}): Executing: @{$job->{CMD}}\n");
     } else {
       warn "Couldn't open log file $job->{LOGFILE}: $!";
@@ -198,23 +198,23 @@ sub job_queued
 # Cleanup actions.  Only call when completely done with a job
 sub _cleanup
 {
-    my ($self, $wheelid, $payload) = @_;
+  my ($self, $wheelid, $payload) = @_;
 
-    # Cleanup the global and private job payload references
-    delete $PAYLOADS{$wheelid};
-    delete $self->{JOBS_RUNNING}{$wheelid};
+  # Cleanup the global and private job payload references
+  delete $PAYLOADS{$wheelid};
+  delete $self->{JOBS_RUNNING}{$wheelid};
 
-    # Cleanup any timeout alarms
-    POE::Kernel->post( $self->{JOB_MANAGER_SESSION_ID}, 'maybe_clear_alarms', $payload->{_timer_id} )
-	if $payload->{_timer_id};
+  # Cleanup any timeout alarms
+  POE::Kernel->post( $self->{JOB_MANAGER_SESSION_ID}, 'maybe_clear_alarms', $payload->{_timer_id} )
+  if $payload->{_timer_id};
 
-    # Cleanup any private keys we stuck onto the job paylaod
-    delete $payload->{$_} foreach ( qw(_start _signals _timer_id _timeout_grace 
-				       _logfh _logprefix _keep_output _cmdname
-				       _priority _cleanup) );
+  # Cleanup any private keys we stuck onto the job paylaod
+  delete $payload->{$_} foreach ( qw(_start _signals _timer_id _timeout_grace 
+             _logfh _logprefix _keep_output _cmdname
+             _priority _cleanup) );
 
 #   See if there's anything else to submit...?
-    POE::Kernel->post( $self->{JOB_MANAGER_SESSION_ID}, 'job_queued' );
+  POE::Kernel->post( $self->{JOB_MANAGER_SESSION_ID}, 'job_queued' );
 }
 
 sub _child_stdout {
@@ -336,9 +336,9 @@ sub addJob
 {
   my ($self, $action, $jobargs, @cmd) = @_;
   my $job = { CMD => [ @cmd ],
-	      PID => 0,
-	      _action => $action,
-	      %{$jobargs || {}} };
+        PID => 0,
+        _action => $action,
+        %{$jobargs || {}} };
 
   # Default priority ideally the lowest possible in order to give the
   # user the option to make certain jobs high priority.
@@ -358,11 +358,11 @@ sub timeout
   my $signal = shift @{$job->{_signals}};
   my $logfh = \*{$job->{_logfh}};
   if (!$signal) {
-      # even kill -9 failed?  ok... well try to cleanup and move on...
-      my $msg = "$job->{_cmdname}($job->{PID}): job will not die after timeout, and does not respond to kill signals\n";
-      print $logfh (strftime ("%Y-%m-%d %H:%M:%S ", gmtime), $msg);
-      $self->Alert($msg);
-      return;
+    # even kill -9 failed?  ok... well try to cleanup and move on...
+    my $msg = "$job->{_cmdname}($job->{PID}): job will not die after timeout, and does not respond to kill signals\n";
+    print $logfh (strftime ("%Y-%m-%d %H:%M:%S ", gmtime), $msg);
+    $self->Alert($msg);
+    return;
   }
 
   my $wheel = $self->{_child}->wheel($wheelid);
@@ -435,14 +435,14 @@ sub jobsRemaining()
 
 sub jobsQueued()
 {
-    my $self = shift;
-    return $self->{JOB_QUEUE}->get_item_count();
+  my $self = shift;
+  return $self->{JOB_QUEUE}->get_item_count();
 }
 
 sub jobsRunning()
 {
-    my $self = shift;
-    return scalar(keys %{$self->{JOBS_RUNNING}});
+  my $self = shift;
+  return scalar(keys %{$self->{JOBS_RUNNING}});
 }
  
 sub maybe_clear_alarms

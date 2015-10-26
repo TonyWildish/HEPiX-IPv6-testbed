@@ -7,7 +7,7 @@ use POSIX;
 use File::Path;
 use File::Basename;
 use Lifecycle::Core::Command;
-use Lifecycle::Core::Timing;
+# use Lifecycle::Core::Timing;
 use Lifecycle::Core::Loader;
 
 our %params =

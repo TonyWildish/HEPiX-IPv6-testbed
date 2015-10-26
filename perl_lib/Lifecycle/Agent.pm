@@ -15,29 +15,29 @@ use Data::Dumper;
 our @EXPORT = qw( );
 
 our %params =
-	(
-	  ME			=> 'Lifecycle',
-	  LIFECYCLE_CONFIG	=> undef,
-	  LIFECYCLE_COMPONENT	=> 'Lifecycle::Lite',
-	  STATISTICS_INTERVAL	=> 3600,
-	  STATISTICS_DETAIL	=>    1,
-	  StatsFrequency	=>  600,
-	  Incarnation		=>    0,
-	  Jitter		=>    0,
-	  CycleSpeedup		=>    1,
-	  GarbageCycle		=>    0,
-	  GarbageAge		=> 3600,
-	  Sequence		=>    1,
-	  NJobs			=>    2,
-	  ConfigRefresh		=>    3,
+  (
+    ME      => 'Lifecycle',
+    LIFECYCLE_CONFIG  => undef,
+    LIFECYCLE_COMPONENT => 'Lifecycle::Lite',
+    # STATISTICS_INTERVAL => 3600,
+    # STATISTICS_DETAIL =>    1,
+    # StatsFrequency  =>  600,
+    Incarnation   =>    0,
+    Jitter    =>    0,
+    CycleSpeedup    =>    1,
+    GarbageCycle    =>    0,
+    GarbageAge    => 3600,
+    Sequence    =>    1,
+    NJobs     =>    2,
+    ConfigRefresh   =>    3,
 # don't touch these...
-	  LOAD_DROPBOX		=> 0,
-	  LOAD_DROPBOX_WORKDIRS	=> 0,
-	  LOAD_DB		=> 0,
-	  LOAD_CYCLE		=> 0,
-	);
+    # LOAD_DROPBOX    => 0,
+    # LOAD_DROPBOX_WORKDIRS => 0,
+    # LOAD_DB   => 0,
+    # LOAD_CYCLE    => 0,
+  );
 
-our $pmon;
+# our $pmon;
 
 sub new {
   my $proto = shift;
@@ -45,23 +45,21 @@ sub new {
   my %args = @_;
   my $self  = $class->SUPER::new(%params,%args);
   $self->{JOBMANAGER} = new Lifecycle::Core::JobManager(
-	NJOBS	=> $self->{NJobs},
-	VERBOSE => 0,
-	DEBUG	=> 0,
-	KEEPALIVE => 5);
+                          NJOBS => $self->{NJobs},
+                          VERBOSE => 0,
+                          DEBUG => 0,
+                          KEEPALIVE => 5
+                        );
 
   $self->{_njobs} = 0; # for UA-based stuff
   $self->{nWorkflows} = 0;
 
 # Start a POE session for myself
-
   POE::Session->create (
     object_states =>
     [
       $self =>
       {
-        # _make_stats         => '_make_stats',
-
         _start   => '_start',
         _stop    => '_stop',
         _child   => '_child',
@@ -90,17 +88,17 @@ sub AUTOLOAD {
 
 sub Dbgmsg { my $self = shift; $self->SUPER::Dbgmsg(@_) if $self->{Debug}; }
 
-sub OnConnect
-{
-  my ( $self, $heap, $kernel ) = @_[ OBJECT, HEAP, KERNEL ];
+# sub OnConnect
+# {
+#   my ( $self, $heap, $kernel ) = @_[ OBJECT, HEAP, KERNEL ];
 
-# Only start the timer first time round, or there will be one timer per time
-# the receiver is restarted
-  return 0 if $heap->{count};
-  print "OnConnect: self=$self, heap=$heap\n";
+# # Only start the timer first time round, or there will be one timer per time
+# # the receiver is restarted
+#   return 0 if $heap->{count};
+#   print "OnConnect: self=$self, heap=$heap\n";
 
-  return 0;
-}
+#   return 0;
+# }
 
 sub _default {
   my $self = shift;
@@ -153,11 +151,11 @@ sub _start {
   $kernel->state(      '_stop', $self );
 
   $kernel->state( 'FileChanged', $self );
-  my %watcher_args = (	File     => $self->{LIFECYCLE_CONFIG},
-                	Interval => 7,
-			Client	 => $self->{ME},
-                	Event    => 'FileChanged',
-              	     );
+  my %watcher_args = (  File     => $self->{LIFECYCLE_CONFIG},
+                                      Interval => 7,
+                                      Client   => $self->{ME},
+                                      Event    => 'FileChanged',
+                                    );
   $self->{Watcher} = Lifecycle::FileWatcher->new( %watcher_args );
   $kernel->yield('FileChanged');
 }
@@ -232,7 +230,7 @@ sub FileChanged {
       next;
     }
     next if ( $workflow->{Incarnations} &&
-	      $workflow->{Incarnations} < $workflow->{Incarnation} );
+        $workflow->{Incarnations} < $workflow->{Incarnation} );
     $self->Logmsg("Beginning lifecycle for \"$workflow->{Name}...\"");
     $kernel->delay_set('lifecycle',0.01,$workflow);
     $nWorkflows++;
@@ -262,18 +260,15 @@ sub lifecycle {
   {
 
     $self->Logmsg("Reached maximum number of cycles for ",$workflow->{Name},", will not start another cycle...");
-# TW Do I need this here?
-#    $self->{JOBMANAGER}{KEEPALIVE} = 0;
-#    $self->{Watcher}->RemoveClient( $self->{ME} ) if defined($self->{Watcher});
     return;
   }
   $workflow->{NCycles}-- if $workflow->{NCycles} > 0;
 
   my $payload = {
-		  'workflow' => $workflow,
-		  'id'       => $self->id(),
-		  'step'     => 0,
-		};
+      'workflow' => $workflow,
+      'id'       => $self->id(),
+      'step'     => 0,
+    };
   $self->Dbgmsg("lifecycle: yield nextEvent: ",$workflow->{Name},':',$payload->{id});
   $kernel->yield('nextEvent',$payload);
   $self->{nWorkflows}++;
@@ -320,8 +315,8 @@ sub ReadConfig {
   push @required, @{$self->{Required}} if $self->{Required};
   push @required, qw / CycleTime NCycles Events Name Suspend TmpDir
                    KeepInputs KeepOutputs KeepLogs
-		   KeepFailedInputs KeepFailedOutputs KeepFailedLogs
-		   Jitter TmpDir /;
+       KeepFailedInputs KeepFailedOutputs KeepFailedLogs
+       Jitter TmpDir /;
 
 # Fill out the Templates using global defaults, hard-coded. This is just an
 # easy way to save typing in the template.
@@ -341,7 +336,7 @@ sub ReadConfig {
       $template->{$param} = {}  unless defined $template->{$param};
       foreach $event ( @{$template->{Events}} ) {
         $template->{$param}{$event} = $self->{Defaults}{$param}{$event}
-		 unless defined $template->{$param}{$event};
+        unless defined $template->{$param}{$event};
       }
     }
     foreach $event ( @{$template->{Events}} ) {
@@ -414,19 +409,6 @@ sub _stop {
   }
   $self->Logmsg("Wait for JobManager to become idle, then exit...");
 }
-
-# sub stats {
-#   my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
-#   my ($stats,$event,$key,$value);
-#   $stats = $self->{stats};
-#   $self->Logmsg("Statistics: ",Dumper($stats));
-#   $self->Logmsg("Statistics: memory/CPU use: ",$pmon->FormatStats($pmon->ReadProcessStats));
-
-#   $self->Logmsg("Statistics: agent & objects: ",$pmon->TotalSizes());
-#   $self->Dbgmsg("JobManager: Queued:",$self->{JOBMANAGER}->jobsQueued,", Running:",$self->{JOBMANAGER}->jobsRunning());
-#   return unless $kernel;
-#   $kernel->delay_set('stats',$self->{StatsFrequency});
-# }
 
 sub garbage {
   my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
@@ -603,38 +585,8 @@ sub post_exec {
     $self->processReport($result);
   }
 
-# # Global statistics
-#   $self->{stats}{events}{$name}{$event}{status}{$status}++;
-#   $self->{stats}{events}{$name}{$event}{count}++;
-
-# # If there is a 'stats' section, act on the information it contains
-#   if ( ref($result) eq 'HASH' ) {
-#     $self->processStats($result);
-#   }
   return $result
 }
-
-# sub processStats {
-#   my ($self,$payload) = @_;
-#   my ($stats,$name,$key,$value,$skey);
-#   return unless $stats = $payload->{stats};
-
-#   $name = $payload->{workflow}{Name};
-#   while ( ($key,$value) = each( %{$stats} ) ) {
-#     if ( !$self->{stats}{$name}{$key} ) { $self->{stats}{$name}{$key} = {}; }
-#     $skey = $self->{stats}{$name}{$key};
-#     if ( ! $skey->{count} ) {
-#       $skey->{count} = $skey->{total} = 0;
-#       $skey->{min} = $skey->{max} = $value;
-#     }
-#     $skey->{total} += $value;
-#     $skey->{count}++;
-#     $skey->{mean} = $skey->{total} / $skey->{count};
-#     if ( $skey->{min} > $value ) { $skey->{min} = $value; }
-#     if ( $skey->{max} < $value ) { $skey->{max} = $value; }
-#   }
-#   delete $payload->{stats};
-# }
 
 sub processReport {
   my ($self,$payload) = @_;

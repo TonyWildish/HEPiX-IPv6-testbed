@@ -8,9 +8,9 @@ sub new
   my ($self,$help,%params,%h);
   %h = @_;
   %params = (
-	       NAMESPACE => undef,
-         VERBOSE   => 0,
-         DEBUG     => 0,
+      	       NAMESPACE => undef,
+               VERBOSE   => 0,
+               DEBUG     => 0,
             );
   $self = \%params;
   map { $self->{$_} = $h{$_} } keys %h;
@@ -49,14 +49,14 @@ sub ModuleHelp
   my ($self,$interface) = @_;
   my @interfaces = grep (!/\//,sort keys %{$self->Commands});
   if ( grep { $_ eq $interface} @interfaces ){
-      my $module = $self->Load($interface);
-      my $ns = $module->new();
-      $ns->Help() and exit(1);
+    my $module = $self->Load($interface);
+    my $ns = $module->new();
+    $ns->Help() and exit(1);
   } else {
-      print "Interface '$interface' is not supported. Known interfaces are: ";
-      map { print "'$_', " } @interfaces;
-      print "\n";
-      exit(2);
+    print "Interface '$interface' is not supported. Known interfaces are: ";
+    map { print "'$_', " } @interfaces;
+    print "\n";
+    exit(2);
   }
 }
 
@@ -106,7 +106,6 @@ sub _commands
 sub Commands
 {
   my $self = shift;
-$DB::single=1;
   return $self->{COMMANDS} if $self->{COMMANDS};
 
   my ($command,%commands,$namespace);
@@ -128,4 +127,5 @@ sub Subspaces
   my $self = shift;
   return $self->{SUBSPACES};
 }
+
 1;
