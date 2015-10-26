@@ -60,7 +60,7 @@ sub new {
     [
       $self =>
       {
-        _make_stats         => '_make_stats',
+        # _make_stats         => '_make_stats',
 
         _start   => '_start',
         _stop    => '_stop',
@@ -144,7 +144,7 @@ sub _start {
   $kernel->state(  'lifecycle', $self );
   $kernel->state(     'reaper', $self );
 
-  $kernel->state(      'stats', $self );
+  # $kernel->state(      'stats', $self );
 
   $kernel->state(    'garbage', $self );
   $kernel->delay_set('garbage', $self->{GarbageCycle}) if $self->{GarbageCycle};
@@ -173,7 +173,7 @@ sub nextEvent {
   my ($workflow,$cmd,$module,$event,$delay,$id,$msg);
   $workflow = $payload->{workflow};
 
-  $self->processStats($payload);
+  # $self->processStats($payload);
   $self->processReport($payload);
 
   $msg = "nextEvent: $workflow->{Name}:";
@@ -209,8 +209,8 @@ sub FileChanged {
   $self->Logmsg("\"",$self->{LIFECYCLE_CONFIG},"\" has changed...");
   $self->ReadConfig();
 
-  $kernel->alarm_remove($self->{_stats_timer}) if $self->{_stats_timer};
-  $self->{_stats_timer} = $kernel->delay_set('stats',$self->{StatsFrequency});
+  # $kernel->alarm_remove($self->{_stats_timer}) if $self->{_stats_timer};
+  # $self->{_stats_timer} = $kernel->delay_set('stats',$self->{StatsFrequency});
 
   if ( $self->{Suspend} ) {
     $self->Logmsg("I am suspended, will not start new workflows");
@@ -403,8 +403,8 @@ sub _stop {
 
   $self->Logmsg('nothing left to do, may as well shoot myself');
   $self->{Watcher}->RemoveClient( $self->{ME} ) if defined($self->{Watcher});
-  $kernel->call($session,'stats');
-  $kernel->delay('stats');
+  # $kernel->call($session,'stats');
+  # $kernel->delay('stats');
   $kernel->delay('garbage');
   $self->{JOBMANAGER}{KEEPALIVE} = 0;
   if ( $self->{Debug} )
@@ -415,18 +415,18 @@ sub _stop {
   $self->Logmsg("Wait for JobManager to become idle, then exit...");
 }
 
-sub stats {
-  my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
-  my ($stats,$event,$key,$value);
-  $stats = $self->{stats};
-  $self->Logmsg("Statistics: ",Dumper($stats));
-  $self->Logmsg("Statistics: memory/CPU use: ",$pmon->FormatStats($pmon->ReadProcessStats));
+# sub stats {
+#   my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
+#   my ($stats,$event,$key,$value);
+#   $stats = $self->{stats};
+#   $self->Logmsg("Statistics: ",Dumper($stats));
+#   $self->Logmsg("Statistics: memory/CPU use: ",$pmon->FormatStats($pmon->ReadProcessStats));
 
-  $self->Logmsg("Statistics: agent & objects: ",$pmon->TotalSizes());
-  $self->Dbgmsg("JobManager: Queued:",$self->{JOBMANAGER}->jobsQueued,", Running:",$self->{JOBMANAGER}->jobsRunning());
-  return unless $kernel;
-  $kernel->delay_set('stats',$self->{StatsFrequency});
-}
+#   $self->Logmsg("Statistics: agent & objects: ",$pmon->TotalSizes());
+#   $self->Dbgmsg("JobManager: Queued:",$self->{JOBMANAGER}->jobsQueued,", Running:",$self->{JOBMANAGER}->jobsRunning());
+#   return unless $kernel;
+#   $kernel->delay_set('stats',$self->{StatsFrequency});
+# }
 
 sub garbage {
   my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
@@ -547,7 +547,7 @@ sub exec {
 sub post_exec {
   my ($self, $arg0, $arg1) = @_;
   my ($workflow,$payload,$in,$out,$log,$json,$result,$name,$id,$event);
-  my ($job,$duration,$status,$delay,$report,$stats);
+  my ($job,$duration,$status,$delay,$report);
 
   ($payload,$in,$out,$log) = @{$arg0};
   $workflow = $payload->{workflow};
@@ -603,38 +603,38 @@ sub post_exec {
     $self->processReport($result);
   }
 
-# Global statistics
-  $self->{stats}{events}{$name}{$event}{status}{$status}++;
-  $self->{stats}{events}{$name}{$event}{count}++;
+# # Global statistics
+#   $self->{stats}{events}{$name}{$event}{status}{$status}++;
+#   $self->{stats}{events}{$name}{$event}{count}++;
 
-# If there is a 'stats' section, act on the information it contains
-  if ( ref($result) eq 'HASH' ) {
-    $self->processStats($result);
-  }
+# # If there is a 'stats' section, act on the information it contains
+#   if ( ref($result) eq 'HASH' ) {
+#     $self->processStats($result);
+#   }
   return $result
 }
 
-sub processStats {
-  my ($self,$payload) = @_;
-  my ($stats,$name,$key,$value,$skey);
-  return unless $stats = $payload->{stats};
+# sub processStats {
+#   my ($self,$payload) = @_;
+#   my ($stats,$name,$key,$value,$skey);
+#   return unless $stats = $payload->{stats};
 
-  $name = $payload->{workflow}{Name};
-  while ( ($key,$value) = each( %{$stats} ) ) {
-    if ( !$self->{stats}{$name}{$key} ) { $self->{stats}{$name}{$key} = {}; }
-    $skey = $self->{stats}{$name}{$key};
-    if ( ! $skey->{count} ) {
-      $skey->{count} = $skey->{total} = 0;
-      $skey->{min} = $skey->{max} = $value;
-    }
-    $skey->{total} += $value;
-    $skey->{count}++;
-    $skey->{mean} = $skey->{total} / $skey->{count};
-    if ( $skey->{min} > $value ) { $skey->{min} = $value; }
-    if ( $skey->{max} < $value ) { $skey->{max} = $value; }
-  }
-  delete $payload->{stats};
-}
+#   $name = $payload->{workflow}{Name};
+#   while ( ($key,$value) = each( %{$stats} ) ) {
+#     if ( !$self->{stats}{$name}{$key} ) { $self->{stats}{$name}{$key} = {}; }
+#     $skey = $self->{stats}{$name}{$key};
+#     if ( ! $skey->{count} ) {
+#       $skey->{count} = $skey->{total} = 0;
+#       $skey->{min} = $skey->{max} = $value;
+#     }
+#     $skey->{total} += $value;
+#     $skey->{count}++;
+#     $skey->{mean} = $skey->{total} / $skey->{count};
+#     if ( $skey->{min} > $value ) { $skey->{min} = $value; }
+#     if ( $skey->{max} < $value ) { $skey->{max} = $value; }
+#   }
+#   delete $payload->{stats};
+# }
 
 sub processReport {
   my ($self,$payload) = @_;
