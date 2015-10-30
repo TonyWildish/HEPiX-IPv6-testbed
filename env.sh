@@ -7,12 +7,13 @@ fi
 [ -d data ] || mkdir data
 
 if [ ! -f data/file-100.dat ] || [ ! -f data/file-1000.dat ]; then
-	echo "Your 'data' directory doesn't have any big files in for testing. I'll make"
-	echo "them now, please be patient for a couple of minutes"
+	echo " "
+	echo "Your 'data' directory is missing some big files in for testing. I'll make"
+	echo "them now, please be patient for a few seconds"
 
 # a 1 MB seed file
 	if [ ! -f data/file-1.dat ]; then
-		dd if=/dev/random of=data/file-1.dat bs=1024 count=1024
+		dd if=/dev/random of=data/file-1.dat bs=1024 count=1024 >/dev/null 2>&1
 	fi
 
 # a 100 MB file...
@@ -33,6 +34,7 @@ if [ ! -f data/file-100.dat ] || [ ! -f data/file-1000.dat ]; then
 		done
 	fi
 
+  echo "     "
 fi
 
 export PERL5LIB=${PERL5LIB}:$TESTBED_ROOTperl_lib
