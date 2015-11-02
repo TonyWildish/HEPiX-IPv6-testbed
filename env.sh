@@ -37,5 +37,5 @@ if [ ! -f data/file-100.dat ] || [ ! -f data/file-1000.dat ]; then
   echo "     "
 fi
 
-export PERL5LIB=${PERL5LIB}:$TESTBED_ROOTperl_lib
+export PERL5LIB=${PERL5LIB}:$TESTBED_ROOT/perl_lib
 export PATH=${PATH}:$TESTBED_ROOT/bin
