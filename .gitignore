@@ -1,3 +1,4 @@
 *.pid
 data
 file*dat
+results
