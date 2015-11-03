@@ -5,6 +5,7 @@ use Getopt::Long;
 use Clone qw(clone);
 use Time::HiRes qw ( time );
 use Data::Dumper;
+use File::Path qw / make_path /;
 
 my ($in,$out,$json,$workflow,$payload,$src,$dst,@tmp,$status);
 my ($start,$stop,$duration,$command);
@@ -56,12 +57,14 @@ print "$dst: $duration seconds\n";
 $payload->{stats}{duration} = $duration;
 
 my $now = time(); #scalar localtime;
-my $log = 'results/current/putFile.' . $workflow->{Name} . '.log';
+my $logdir = $ENV{TESTBED_ROOT} . '/results/current';
+-d $logdir || make_path($logdir) || die "Cannot create log directory $logdir: $!\n";
+my $log = $logdir . '/putFile.' . $workflow->{Name} . '.log';
 $log =~ s% %_%g;
 $status = 0 unless defined $status;
-#open LOG, ">>$log";
-#print LOG "$start $stop $status $duration $workflow->{InputFileSize}\n";
-#close LOG;
+open LOG, ">>$log";
+print LOG "$start $stop $status $duration $workflow->{InputFileSize}\n";
+close LOG;
 
 # Reset the delay that was originally put in for transfers...
 $payload->{workflow}{Intervals}{putFile} = 0;
