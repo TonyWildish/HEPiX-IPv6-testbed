@@ -62,7 +62,7 @@ my $log = $logdir . '/putFile.' . $workflow->{Name} . '.log';
 $log =~ s% %_%g;
 $status = 0 unless defined $status;
 open LOG, ">>$log";
-print LOG "$start $stop $status $duration\n"; # $workflow->{InputFileSize}\n";
+print LOG "$start $stop $status $duration $workflow->{InputFileSize}\n";
 close LOG;
 
 # Reset the delay that was originally put in for transfers...
