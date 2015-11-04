@@ -25,11 +25,10 @@ $src = $workflow->{InputFile};
 print "Check existence of $dst\n";
 
 $node = $workflow->{UberFTPHost} || $workflow->{RemoteHost};
-print " ==> uberftp $node 'cd $workflow->{RemotePath}; dir $dst'\n";
 open FTP, "uberftp $node 'cd $workflow->{RemotePath}; dir $dst' 2>&1 |" or
     die "uberftp: $!\n";
 while ( <FTP> ) {
-  if ( m%^\S+\s+\S+\s+\S+\s+\S+\s+(\d+)\s+.*\s+$dst$% ) {
+  if ( m%^\S+\s+\S+\s+\S+\s+\S+\s+(\d+)\s+.*\s+$dst.*$% ) {
     $tmp = $1;
   }
 }

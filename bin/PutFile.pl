@@ -41,6 +41,7 @@ $command = 'globus-url-copy -vb ' . ($workflow->{UseIPv4} ? '' : '-ipv6');
 if ( $workflow->{Options} ) {
   $command .= ' ' . $workflow->{Options};
 }
+print "Command: $command $src $dst\n";
 open FTP, "$command $src $dst 2>&1 |" or
      die "globus-url-copy: $!\n";
 while ( <FTP> ) { print; }
