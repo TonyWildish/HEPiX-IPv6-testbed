@@ -1,5 +1,11 @@
 #!/bin/sh
 
+echo " "
+echo "This should no longer be needed, the requisite modules have been extracted"
+echo "from PhEDEx and copied here"
+echo " "
+exit 0
+
 export TESTBED_ROOT=/data/TESTBED_ROOT
 if [ ! -d "$TESTBED_ROOT" ]; then
   echo "TESTBED_ROOT not defined or not a directory..."

@@ -1,6 +1,6 @@
 # The examples directory...
 
-This directory contains a few example config files to show what the Lifecycle agent can do. You can run these to check that your installation is correctly configured. Not all of them have been tested/debugged lately, the ones which are claimed to work are:
+This directory contains a few example config files to show what the Lifecycle agent can do. You can run these to check that your installation is correctly configured. Not all of them have been tested/debugged lately, the ones which are known to work are:
 
 - example-backoff.conf
 - example-fork-counter-perl-scripts.conf
@@ -16,7 +16,7 @@ You can run any of these as follows:
 
 To stop execution, hit CTRL-C
 
-The others, listed below, are specific to environments that need proxy certificates. Don't bother with them unless you know what you're doing.
+The others, listed below, are specific to environments that need proxy certificates. Don't bother with them yet unless you know what you're doing.
 - example-Auth-proxy.conf
 - example-Auth-self-signed-cert.conf
 - example-Auth.conf
