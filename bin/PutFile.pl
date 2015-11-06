@@ -41,6 +41,7 @@ $command = 'globus-url-copy -vb ' . ($workflow->{UseIPv4} ? '' : '-ipv6');
 if ( $workflow->{Options} ) {
   $command .= ' ' . $workflow->{Options};
 }
+print "Command: $command $src $dst\n";
 open FTP, "$command $src $dst 2>&1 |" or
      die "globus-url-copy: $!\n";
 while ( <FTP> ) { print; }
@@ -62,7 +63,7 @@ my $log = $logdir . '/putFile.' . $workflow->{Name} . '.log';
 $log =~ s% %_%g;
 $status = 0 unless defined $status;
 open LOG, ">>$log";
-print LOG "$start $stop $status $duration\n"; # $workflow->{InputFileSize}\n";
+print LOG "$start $stop $status $duration $workflow->{InputFileSize}\n";
 close LOG;
 
 # Reset the delay that was originally put in for transfers...

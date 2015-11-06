@@ -1,4 +1,6 @@
 *.pid
+*.log
+*.log*.gz
 data
 file*dat
 results
