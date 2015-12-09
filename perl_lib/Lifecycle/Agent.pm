@@ -305,7 +305,7 @@ sub ReadConfig {
   } else {
     $self->{TmpDir}    = '/tmp/' . (getpwuid($<))[0] . '/';
   }
-  foreach ( qw/ Suspend KeepLogs KeepInputs KeepOutputs / ) {
+  foreach ( qw/ Suspend KeepLogs KeepInputs KeepOutputs DieOnError / ) {
     $self->{$_} = 0 unless defined $self->{$_};
   }
   foreach ( qw/ KeepFailedInputs KeepFailedOutputs KeepFailedLogs / ) {
@@ -559,7 +559,7 @@ sub post_exec {
 
 # Clean up
   if ( $status ) {
-    $self->Alert("$name:$id status=$status, abandoning...\n");
+    $self->Alert("$name:$event:$id status=$status, abandoning...\n");
     if ( -f $in && !$workflow->{KeepFailedInputs} ) {
       unlink $in or $self->Fatal("Could not unlink $in: $!\n");
     } else { $result->{in} = $in; }
@@ -569,6 +569,9 @@ sub post_exec {
     if ( -f $out && !$workflow->{KeepFailedOutputs} ) {
       unlink $out or $self->Fatal("Could not unlink $out: $!\n");
     } else { $result->{out} = $out; }
+    if ( $workflow->{DieOnError} ) {
+      $self->Fatal("Exit after error");
+    }
   }
   if ( -f $in && !$workflow->{KeepInputs} ) {
     unlink $in or $self->Fatal("Could not unlink $in: $!\n");
