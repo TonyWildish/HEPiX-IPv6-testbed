@@ -17,27 +17,20 @@ our @EXPORT = qw( );
 our %params =
   (
     ME      => 'Lifecycle',
-    LIFECYCLE_CONFIG  => undef,
+    LIFECYCLE_CONFIG    => undef,
     LIFECYCLE_COMPONENT => 'Lifecycle::Lite',
     # STATISTICS_INTERVAL => 3600,
     # STATISTICS_DETAIL =>    1,
     # StatsFrequency  =>  600,
     Incarnation   =>    0,
-    Jitter    =>    0,
-    CycleSpeedup    =>    1,
-    GarbageCycle    =>    0,
+    Jitter        =>    0,
+    CycleSpeedup  =>    1,
+    GarbageCycle  =>    0,
     GarbageAge    => 3600,
-    Sequence    =>    1,
-    NJobs     =>    2,
-    ConfigRefresh   =>    3,
-# don't touch these...
-    # LOAD_DROPBOX    => 0,
-    # LOAD_DROPBOX_WORKDIRS => 0,
-    # LOAD_DB   => 0,
-    # LOAD_CYCLE    => 0,
+    Sequence      =>    1,
+    NJobs         =>    2,
+    ConfigRefresh =>    3,
   );
-
-# our $pmon;
 
 sub new {
   my $proto = shift;
@@ -205,7 +198,11 @@ sub nextEvent {
 sub FileChanged {
   my ($self,$kernel,$session) = @_[ OBJECT, KERNEL, SESSION ];
   $self->Logmsg("\"",$self->{LIFECYCLE_CONFIG},"\" has changed...");
+  if ( ! defined $self->{_config_first_read} ) {
+    $self->{_config_first_read} = 1;
+  }
   $self->ReadConfig();
+  $self->{_config_first_read} = 0;
 
   # $kernel->alarm_remove($self->{_stats_timer}) if $self->{_stats_timer};
   # $self->{_stats_timer} = $kernel->delay_set('stats',$self->{StatsFrequency});

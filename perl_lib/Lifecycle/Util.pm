@@ -48,9 +48,10 @@ sub ReadConfig {
 
   $file = $this->{Config} unless $file;
   defined($file) && -f $file or return;
-  eval { do "$file"; };
+  eval { require "$file"; };
   if ($@) {
     carp "ReadConfig: $file: $@\n";
+    exit(1) if $this->{_config_first_read};
     return;
   }
 
