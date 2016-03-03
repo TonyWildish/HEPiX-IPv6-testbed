@@ -28,10 +28,11 @@ if ( $src =~ m%:% ) {
   $src =~ m%^[^:]+://[^/]+(/(.*/)?)(.*)$%;
   $src = $3;
   $dir = $1;
+  print "uberftp $node 'cd $dir; dir $src'\n";
   open FTP, "uberftp $node 'cd $dir; dir $src' |" or
       die "uberftp: $!\n";
   while ( <FTP> ) {
-    if ( m%^\S+\s+\S+\s+\S+\s+\S+\s+(\d+)\s+.*\s+$src$% ) {
+    if ( m%^\S+\s+\S+\s+\S+\s+\S+\s+(\d+)\s+.*\s+$src\s*$% ) {
       $workflow->{InputFileSize} = $1;
     }
   }

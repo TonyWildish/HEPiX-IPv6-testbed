@@ -57,7 +57,7 @@ print "$dst: $duration seconds\n";
 $payload->{stats}{duration} = $duration;
 
 my $now = time(); #scalar localtime;
-my $logdir = $ENV{TESTBED_ROOT} . '/results/current';
+my $logdir = $workflow->{Results} . '/results/current';
 -d $logdir || make_path($logdir) || die "Cannot create log directory $logdir: $!\n";
 my $log = $logdir . '/putFile.' . $workflow->{Name} . '.log';
 $log =~ s% %_%g;
